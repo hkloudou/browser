@@ -4,12 +4,8 @@ import "sync"
 
 var pools = sync.Pool{
 	New: func() interface{} {
-		jar, err := NewJar(nil)
-		if err != nil {
-			panic(err)
-		}
 		return &Browser{
-			CookieJar: jar,
+			CookieJar: nil,
 			UserAgent: "",
 		}
 	},

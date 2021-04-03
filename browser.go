@@ -52,6 +52,10 @@ func (me *Browser) Do(httpClient *http.Client, httpReq *http.Request) ([]byte, e
 	return body, nil
 }
 
+func (me *Browser) Release() {
+	pools.Put(me)
+}
+
 //NewBrowser 新建一个全新的浏览器
 func NewBrowser() *Browser {
 	x := pools.Get().(*Browser)
