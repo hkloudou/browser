@@ -59,16 +59,14 @@ func (me *Browser) Release() {
 //NewBrowser 新建一个全新的浏览器
 func NewBrowser() *Browser {
 	x := pools.Get().(*Browser)
-	x.CookieJar, _ = NewJar(nil)
 	x.UserAgent = ""
+	x.CookieJar.Clear()
 	return x
 }
 
-// //NewBrowserWithJar 新建一个带Cookie的浏览器
-// func NewBrowserWithJar(jar *Jar) *Browser {
-// 	bro := &Browser{
-// 		CookieJar: jar,
-// 		UserAgent: "",
-// 	}
-// 	return bro
-// }
+//NewBrowserWithJar 新建一个带Cookie的浏览器
+func NewBrowserWithJar(jar *Jar) *Browser {
+	bro := NewBrowser()
+	bro.CookieJar = jar
+	return bro
+}

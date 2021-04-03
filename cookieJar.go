@@ -322,32 +322,36 @@ func hasPort(host string) bool {
 // jarKey returns the key to use for a jar.
 func jarKey(host string, psl PublicSuffixList) string {
 	if isIP(host) {
-		return host
+		// return host
+		strings.ReplaceAll(host, ".", "-")
 	}
 
 	var i int
 	if psl == nil {
 		i = strings.LastIndex(host, ".")
 		if i <= 0 {
-			return host
+			// return host
+			strings.ReplaceAll(host, ".", "-")
 		}
 	} else {
 		suffix := psl.PublicSuffix(host)
 		if suffix == host {
-			return host
+			// return host
+			strings.ReplaceAll(host, ".", "-")
 		}
 		i = len(host) - len(suffix)
 		if i <= 0 || host[i-1] != '.' {
 			// The provided public suffix list psl is broken.
 			// Storing cookies under host is a safe stopgap.
-			return host
+			// return host
+			strings.ReplaceAll(host, ".", "-")
 		}
 		// Only len(suffix) is used to determine the jar key from
 		// here on, so it is okay if psl.PublicSuffix("www.buggy.psl")
 		// returns "com" as the jar key is generated from host.
 	}
 	prevDot := strings.LastIndex(host[:i-1], ".")
-	// return host[prevDot+1:]	//old
+	// return host[prevDot+1:] //old
 	return strings.ReplaceAll(host[prevDot+1:], ".", "-")
 }
 
@@ -497,4 +501,9 @@ func (j *Jar) domainAndType(host, domain string) (string, bool, error) {
 	}
 
 	return domain, false, nil
+}
+
+func (j *Jar) Clear() {
+	j.Entries = make(map[string]map[string]entry)
+	j.NextSeqNum = 0
 }
