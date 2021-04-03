@@ -53,16 +53,16 @@ func (me *Browser) Do(httpClient *http.Client, httpReq *http.Request) ([]byte, e
 }
 
 //NewBrowser 新建一个全新的浏览器
-func NewBrowser() *Browser {
-	curCookieJar, _ := NewJar(nil)
-	return NewBrowserWithJar(curCookieJar)
-}
+// func NewBrowser() *Browser {
+// 	curCookieJar, _ := NewJar(nil)
+// 	return NewBrowserWithJar(curCookieJar)
+// }
 
-//NewBrowserWithJar 新建一个带Cookie的浏览器
-func NewBrowserWithJar(jar *Jar) *Browser {
-	bro := &Browser{
-		CookieJar: jar,
-		UserAgent: "",
-	}
-	return bro
-}
+// //NewBrowserWithJar 新建一个带Cookie的浏览器
+// func NewBrowserWithJar(jar *Jar) *Browser {
+// 	bro := &Browser{
+// 		CookieJar: jar,
+// 		UserAgent: "",
+// 	}
+// 	return bro
+// }
