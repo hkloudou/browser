@@ -54,7 +54,10 @@ func (me *Browser) Do(httpClient *http.Client, httpReq *http.Request) ([]byte, e
 
 //NewBrowser 新建一个全新的浏览器
 func NewBrowser() *Browser {
-	return pools.Get().(*Browser)
+	x := pools.Get().(*Browser)
+	x.CookieJar, _ = NewJar(nil)
+	x.UserAgent = ""
+	return x
 }
 
 // //NewBrowserWithJar 新建一个带Cookie的浏览器
