@@ -53,10 +53,13 @@ func (me *Browser) GetRequestWithHeadObject(method string, url string, headers m
 //Do 打开网页
 func (me *Browser) Do(httpClient *http.Client, httpReq *http.Request) ([]byte, error) {
 	httpResp, err := httpClient.Do(httpReq)
+	if httpResp != nil {
+		//https://blog.csdn.net/hello_ufo/article/details/92994573 提前决定是否要关闭，修复一个可能的内存泄漏
+		defer httpResp.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer httpResp.Body.Close()
 	body, errReadAll := ioutil.ReadAll(httpResp.Body)
 	if errReadAll != nil {
 		return nil, errReadAll
