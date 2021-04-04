@@ -288,6 +288,20 @@ func (j *Jar) setCookies(u *url.URL, cookies []*http.Cookie, now time.Time) {
 	}
 }
 
+func (j *Jar) DeepCopyFrom(tmp *Jar) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	j.psList = tmp.psList
+	j.Entries = make(map[string]map[string]entry)
+	for k, v := range tmp.Entries {
+		j.Entries[k] = make(map[string]entry)
+		for k2, v2 := range v {
+			j.Entries[k][k2] = v2
+		}
+	}
+	j.NextSeqNum = tmp.NextSeqNum
+}
+
 // canonicalHost strips port from host if present and returns the canonicalized
 // host name.
 func canonicalHost(host string) (string, error) {

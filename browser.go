@@ -24,10 +24,7 @@ func (me *Browser) GetJar() *Jar {
 }
 
 func (me *Browser) SetJar(tmp *Jar) {
-	me.cookieJar.Clear()
-	me.cookieJar.psList = tmp.psList
-	me.cookieJar.Entries = tmp.Entries
-	me.cookieJar.NextSeqNum = tmp.NextSeqNum
+	me.cookieJar.DeepCopyFrom(tmp)
 }
 
 func (me *Browser) SetUserAgent(str string) string {
