@@ -9,7 +9,20 @@ var pools = sync.Pool{
 			panic(err)
 		}
 		return &Browser{
-			CookieJar: jar,
+			cookieJar: jar,
+			UserAgent: "",
+		}
+	},
+}
+
+var poolsJars = sync.Pool{
+	New: func() interface{} {
+		jar, err := NewJar(nil)
+		if err != nil {
+			panic(err)
+		}
+		return &Browser{
+			cookieJar: jar,
 			UserAgent: "",
 		}
 	},

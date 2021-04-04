@@ -8,14 +8,14 @@ import (
 
 //Browser 浏览器
 type Browser struct {
-	CookieJar *Jar
+	cookieJar *Jar
 	UserAgent string
 }
 
 //GetHTTPClient 获得GetHTTPClient对象
 func (me *Browser) GetHTTPClient() *http.Client {
 	return &http.Client{
-		Jar: me.CookieJar,
+		Jar: me.cookieJar,
 	}
 }
 
@@ -52,21 +52,33 @@ func (me *Browser) Do(httpClient *http.Client, httpReq *http.Request) ([]byte, e
 	return body, nil
 }
 
-func (me *Browser) Release() {
-	pools.Put(me)
-}
+// func (me *Browser) Release() {
+// 	pools.Put(me)
+// }
 
 //NewBrowser 新建一个全新的浏览器
 func NewBrowser() *Browser {
-	x := pools.Get().(*Browser)
-	x.UserAgent = ""
-	x.CookieJar.Clear()
-	return x
+	jar, err := NewJar(nil)
+	if err != nil {
+		panic(err)
+	}
+	return &Browser{
+		cookieJar: jar,
+		UserAgent: "",
+	}
+	// x := pools.Get().(*Browser)
+	// x.UserAgent = ""
+	// x.cookieJar.Clear()
+	// return x
 }
 
 //NewBrowserWithJar 新建一个带Cookie的浏览器
 func NewBrowserWithJar(jar *Jar) *Browser {
-	bro := NewBrowser()
-	bro.CookieJar = jar
-	return bro
+	// bro := NewBrowser()
+	// bro.cookieJar = jar
+	// return bro
+	return &Browser{
+		cookieJar: jar,
+		UserAgent: "",
+	}
 }
