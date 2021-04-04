@@ -18,6 +18,11 @@ import (
 // }
 
 func Test_xx(t *testing.T) {
-	// x := &Browser{}
+	y, _ := NewJar(nil)
+	x := NewBrowser()
+	x.SetJar(y)
+	t.Log(x.GetJar())
+	// x.SetJar()
 	// t.Log(x.cookieJar)
+
 }

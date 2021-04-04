@@ -23,6 +23,13 @@ func (me *Browser) GetJar() *Jar {
 	return me.cookieJar
 }
 
+func (me *Browser) SetJar(tmp *Jar) {
+	me.cookieJar.Clear()
+	me.cookieJar.psList = tmp.psList
+	me.cookieJar.Entries = tmp.Entries
+	me.cookieJar.NextSeqNum = tmp.NextSeqNum
+}
+
 func (me *Browser) SetUserAgent(str string) string {
 	return me.userAgent
 }
