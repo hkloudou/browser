@@ -9,7 +9,7 @@ import (
 //Browser 浏览器
 type Browser struct {
 	cookieJar *Jar
-	UserAgent string
+	userAgent string
 }
 
 //GetHTTPClient 获得GetHTTPClient对象
@@ -17,6 +17,14 @@ func (me *Browser) GetHTTPClient() *http.Client {
 	return &http.Client{
 		Jar: me.cookieJar,
 	}
+}
+
+func (me *Browser) GetJar() *Jar {
+	return me.cookieJar
+}
+
+func (me *Browser) SetUserAgent(str string) string {
+	return me.userAgent
 }
 
 //GetRequestObject 获得请求对象
@@ -28,8 +36,8 @@ func (me *Browser) GetRequestObject(method string, url string, body io.Reader) (
 func (me *Browser) GetRequestWithHeadObject(method string, url string, headers map[string]string, body io.Reader) (*http.Request, error) {
 	httpReq, err := http.NewRequest(method, url, body)
 	if err == nil {
-		if me.UserAgent != "" {
-			httpReq.Header.Set("User-Agent", me.UserAgent)
+		if me.userAgent != "" {
+			httpReq.Header.Set("User-Agent", me.userAgent)
 		}
 	}
 	for k, v := range headers {
@@ -64,7 +72,7 @@ func NewBrowser() *Browser {
 	}
 	return &Browser{
 		cookieJar: jar,
-		UserAgent: "",
+		userAgent: "",
 	}
 	// x := pools.Get().(*Browser)
 	// x.UserAgent = ""
@@ -79,6 +87,6 @@ func NewBrowserWithJar(jar *Jar) *Browser {
 	// return bro
 	return &Browser{
 		cookieJar: jar,
-		UserAgent: "",
+		userAgent: "",
 	}
 }
