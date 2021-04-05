@@ -119,10 +119,6 @@ func NewBrowser() *Browser {
 		cookieJar: jar,
 		userAgent: "",
 	}
-	// x := pools.Get().(*Browser)
-	// x.UserAgent = ""
-	// x.cookieJar.Clear()
-	// return x
 }
 
 //NewBrowserWithJar 新建一个带Cookie的浏览器
