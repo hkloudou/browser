@@ -121,6 +121,17 @@ func NewBrowser() *Browser {
 	}
 }
 
+func NewBrowserWithoutPool() *Browser {
+	jar, err := NewJar(nil)
+	if err != nil {
+		panic(err)
+	}
+	return &Browser{
+		cookieJar: jar,
+		userAgent: "",
+	}
+}
+
 //NewBrowserWithJar 新建一个带Cookie的浏览器
 func NewBrowserWithJar(jar *Jar) *Browser {
 	// bro := NewBrowser()
