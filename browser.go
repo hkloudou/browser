@@ -65,6 +65,7 @@ func (me *Browser) SetJar(tmp *Jar) {
 }
 
 func (me *Browser) SetUserAgent(str string) string {
+	me.userAgent = str
 	return me.userAgent
 }
 
