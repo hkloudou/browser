@@ -5,17 +5,21 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+
+	// "net/http/internal/ascii"
 	"net/url"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hkloudou/browser/ascii"
 )
 
 // PublicSuffixList provides the public suffix of a domain. For example:
-//      - the public suffix of "example.com" is "com",
-//      - the public suffix of "foo1.foo2.foo3.co.uk" is "co.uk", and
-//      - the public suffix of "bar.pvt.k12.ma.us" is "pvt.k12.ma.us".
+//   - the public suffix of "example.com" is "com",
+//   - the public suffix of "foo1.foo2.foo3.co.uk" is "co.uk", and
+//   - the public suffix of "bar.pvt.k12.ma.us" is "pvt.k12.ma.us".
 //
 // Implementations of PublicSuffixList must be safe for concurrent use by
 // multiple goroutines.
@@ -53,30 +57,30 @@ type Options struct {
 
 // Jar implements the http.CookieJar interface from the net/http package.
 type Jar struct {
-	psList PublicSuffixList `bson:"-"`
+	psList PublicSuffixList
 
 	// mu locks the remaining fields.
-	mu sync.Mutex `bson:"-"`
+	mu sync.Mutex
 
 	// entries is a set of entries, keyed by their eTLD+1 and subkeyed by
 	// their name/domain/path.
-	Entries map[string]map[string]entry `json:"entries" bson:"entries"`
+	Entries map[string]map[string]entry
 
 	// nextSeqNum is the next sequence number assigned to a new cookie
 	// created SetCookies.
-	NextSeqNum uint64 `json:"nextseqnum" bson:"nextseqnum"`
+	NextSeqNum uint64
 }
 
-// NewJar returns a new cookie jar. A nil *Options is equivalent to a zero
+// New returns a new cookie jar. A nil [*Options] is equivalent to a zero
 // Options.
-func NewJar(o *Options) (*Jar, error) {
+func NewJar(o *Options) *Jar {
 	jar := &Jar{
 		Entries: make(map[string]map[string]entry),
 	}
 	if o != nil {
 		jar.psList = o.PublicSuffixList
 	}
-	return jar, nil
+	return jar
 }
 
 // entry is the internal representation of a cookie.
@@ -84,18 +88,18 @@ func NewJar(o *Options) (*Jar, error) {
 // This struct type is not used outside of this package per se, but the exported
 // fields are those of RFC 6265.
 type entry struct {
-	Name       string    `bson:"name"`
-	Value      string    `bson:"value"`
-	Domain     string    `bson:"domain"`
-	Path       string    `bson:"path"`
-	SameSite   string    `bson:"samesite"`
-	Secure     bool      `bson:"secure"`
-	HttpOnly   bool      `bson:"httpOnly"`
-	Persistent bool      `bson:"persistent"`
-	HostOnly   bool      `bson:"hostonly"`
-	Expires    time.Time `bson:"expires"`
-	Creation   time.Time `bson:"creation"`
-	LastAccess time.Time `bson:"lastAccess"`
+	Name       string
+	Value      string
+	Domain     string
+	Path       string
+	SameSite   string
+	Secure     bool
+	HttpOnly   bool
+	Persistent bool
+	HostOnly   bool
+	Expires    time.Time
+	Creation   time.Time
+	LastAccess time.Time
 
 	// seqNum is a sequence number so that Cookies returns cookies in a
 	// deterministic order, even for cookies that have equal Path length and
@@ -105,8 +109,7 @@ type entry struct {
 
 // id returns the domain;path;name triple of e as an id.
 func (e *entry) id() string {
-	// return fmt.Sprintf("%s;%s;%s", e.Domain, e.Path, e.Name)
-	return strings.ReplaceAll(fmt.Sprintf("%s;%s;%s", e.Domain, e.Path, e.Name), ".", "-")
+	return fmt.Sprintf("%s;%s;%s", e.Domain, e.Path, e.Name)
 }
 
 // shouldSend determines whether e's cookie qualifies to be included in a
@@ -116,7 +119,9 @@ func (e *entry) shouldSend(https bool, host, path string) bool {
 	return e.domainMatch(host) && e.pathMatch(path) && (https || !e.Secure)
 }
 
-// domainMatch implements "domain-match" of RFC 6265 section 5.1.3.
+// domainMatch checks whether e's Domain allows sending e back to host.
+// It differs from "domain-match" of RFC 6265 section 5.1.3 because we treat
+// a cookie with an IP address in the Domain always as a host cookie.
 func (e *entry) domainMatch(host string) bool {
 	if e.Domain == host {
 		return true
@@ -144,7 +149,7 @@ func hasDotSuffix(s, suffix string) bool {
 	return len(s) > len(suffix) && s[len(s)-len(suffix)-1] == '.' && s[len(s)-len(suffix):] == suffix
 }
 
-// Cookies implements the Cookies method of the http.CookieJar interface.
+// Cookies implements the Cookies method of the [http.CookieJar] interface.
 //
 // It returns an empty slice if the URL's scheme is not HTTP or HTTPS.
 func (j *Jar) Cookies(u *url.URL) (cookies []*http.Cookie) {
@@ -207,8 +212,8 @@ func (j *Jar) cookies(u *url.URL, now time.Time) (cookies []*http.Cookie) {
 		if len(s[i].Path) != len(s[j].Path) {
 			return len(s[i].Path) > len(s[j].Path)
 		}
-		if !s[i].Creation.Equal(s[j].Creation) {
-			return s[i].Creation.Before(s[j].Creation)
+		if ret := s[i].Creation.Compare(s[j].Creation); ret != 0 {
+			return ret < 0
 		}
 		return s[i].seqNum < s[j].seqNum
 	})
@@ -219,7 +224,7 @@ func (j *Jar) cookies(u *url.URL, now time.Time) (cookies []*http.Cookie) {
 	return cookies
 }
 
-// SetCookies implements the SetCookies method of the http.CookieJar interface.
+// SetCookies implements the SetCookies method of the [http.CookieJar] interface.
 //
 // It does nothing if the URL's scheme is not HTTP or HTTPS.
 func (j *Jar) SetCookies(u *url.URL, cookies []*http.Cookie) {
@@ -302,22 +307,30 @@ func (j *Jar) DeepCopyFrom(tmp *Jar) {
 	j.NextSeqNum = tmp.NextSeqNum
 }
 
+func (j *Jar) Clear() {
+	j.Entries = make(map[string]map[string]entry)
+	j.NextSeqNum = 0
+}
+
 // canonicalHost strips port from host if present and returns the canonicalized
 // host name.
 func canonicalHost(host string) (string, error) {
 	var err error
-	host = strings.ToLower(host)
 	if hasPort(host) {
 		host, _, err = net.SplitHostPort(host)
 		if err != nil {
 			return "", err
 		}
 	}
-	if strings.HasSuffix(host, ".") {
-		// Strip trailing dot from fully qualified domain names.
-		host = host[:len(host)-1]
+	// Strip trailing dot from fully qualified domain names.
+	host = strings.TrimSuffix(host, ".")
+	encoded, err := toASCII(host)
+	if err != nil {
+		return "", err
 	}
-	return toASCII(host)
+	// We know this is ascii, no need to check.
+	lower, _ := ascii.ToLower(encoded)
+	return lower, nil
 }
 
 // hasPort reports whether host contains a port number. host may be a host
@@ -336,45 +349,47 @@ func hasPort(host string) bool {
 // jarKey returns the key to use for a jar.
 func jarKey(host string, psl PublicSuffixList) string {
 	if isIP(host) {
-		// return host
-		strings.ReplaceAll(host, ".", "-")
+		return host
 	}
 
 	var i int
 	if psl == nil {
 		i = strings.LastIndex(host, ".")
 		if i <= 0 {
-			// return host
-			strings.ReplaceAll(host, ".", "-")
+			return host
 		}
 	} else {
 		suffix := psl.PublicSuffix(host)
 		if suffix == host {
-			// return host
-			strings.ReplaceAll(host, ".", "-")
+			return host
 		}
 		i = len(host) - len(suffix)
 		if i <= 0 || host[i-1] != '.' {
 			// The provided public suffix list psl is broken.
 			// Storing cookies under host is a safe stopgap.
-			// return host
-			strings.ReplaceAll(host, ".", "-")
+			return host
 		}
 		// Only len(suffix) is used to determine the jar key from
 		// here on, so it is okay if psl.PublicSuffix("www.buggy.psl")
 		// returns "com" as the jar key is generated from host.
 	}
 	prevDot := strings.LastIndex(host[:i-1], ".")
-	// return host[prevDot+1:] //old
-	return strings.ReplaceAll(host[prevDot+1:], ".", "-")
+	return host[prevDot+1:]
 }
 
 // isIP reports whether host is an IP address.
 func isIP(host string) bool {
+	if strings.ContainsAny(host, ":%") {
+		// Probable IPv6 address.
+		// Hostnames can't contain : or %, so this is definitely not a valid host.
+		// Treating it as an IP is the more conservative option, and avoids the risk
+		// of interpeting ::1%.www.example.com as a subtomain of www.example.com.
+		return true
+	}
 	return net.ParseIP(host) != nil
 }
 
-// defaultPath returns the directory part of an URL's path according to
+// defaultPath returns the directory part of a URL's path according to
 // RFC 6265 section 5.1.4.
 func defaultPath(path string) string {
 	if len(path) == 0 || path[0] != '/' {
@@ -388,7 +403,7 @@ func defaultPath(path string) string {
 	return path[:i] // Path is either of form "/abc/xyz" or "/abc/xyz/".
 }
 
-// newEntry creates an entry from a http.Cookie c. now is the current time and
+// newEntry creates an entry from an http.Cookie c. now is the current time and
 // is compared to c.Expires to determine deletion of c. defPath and host are the
 // default-path and the canonical host name of the URL c was received from.
 //
@@ -449,7 +464,6 @@ func (j *Jar) newEntry(c *http.Cookie, now time.Time, defPath, host string) (e e
 var (
 	errIllegalDomain   = errors.New("cookiejar: illegal cookie domain attribute")
 	errMalformedDomain = errors.New("cookiejar: malformed cookie domain attribute")
-	errNoHostname      = errors.New("cookiejar: no host name available (IP only)")
 )
 
 // endOfTime is the time when session (non-persistent) cookies expire.
@@ -466,10 +480,36 @@ func (j *Jar) domainAndType(host, domain string) (string, bool, error) {
 	}
 
 	if isIP(host) {
-		// According to RFC 6265 domain-matching includes not being
-		// an IP address.
-		// TODO: This might be relaxed as in common browsers.
-		return "", false, errNoHostname
+		// RFC 6265 is not super clear here, a sensible interpretation
+		// is that cookies with an IP address in the domain-attribute
+		// are allowed.
+
+		// RFC 6265 section 5.2.3 mandates to strip an optional leading
+		// dot in the domain-attribute before processing the cookie.
+		//
+		// Most browsers don't do that for IP addresses, only curl
+		// (version 7.54) and IE (version 11) do not reject a
+		//     Set-Cookie: a=1; domain=.127.0.0.1
+		// This leading dot is optional and serves only as hint for
+		// humans to indicate that a cookie with "domain=.bbc.co.uk"
+		// would be sent to every subdomain of bbc.co.uk.
+		// It just doesn't make sense on IP addresses.
+		// The other processing and validation steps in RFC 6265 just
+		// collapse to:
+		if host != domain {
+			return "", false, errIllegalDomain
+		}
+
+		// According to RFC 6265 such cookies should be treated as
+		// domain cookies.
+		// As there are no subdomains of an IP address the treatment
+		// according to RFC 6265 would be exactly the same as that of
+		// a host-only cookie. Contemporary browsers (and curl) do
+		// allows such cookies but treat them as host-only cookies.
+		// So do we as it just doesn't make sense to label them as
+		// domain cookies when there is no domain; the whole notion of
+		// domain cookies requires a domain name to be well defined.
+		return host, true, nil
 	}
 
 	// From here on: If the cookie is valid, it is a domain cookie (with
@@ -484,7 +524,12 @@ func (j *Jar) domainAndType(host, domain string) (string, bool, error) {
 		// both are illegal.
 		return "", false, errMalformedDomain
 	}
-	domain = strings.ToLower(domain)
+
+	domain, isASCII := ascii.ToLower(domain)
+	if !isASCII {
+		// Received non-ASCII domain, e.g. "perché.com" instead of "xn--perch-fsa.com"
+		return "", false, errMalformedDomain
+	}
 
 	if domain[len(domain)-1] == '.' {
 		// We received stuff like "Domain=www.example.com.".
@@ -515,9 +560,4 @@ func (j *Jar) domainAndType(host, domain string) (string, bool, error) {
 	}
 
 	return domain, false, nil
-}
-
-func (j *Jar) Clear() {
-	j.Entries = make(map[string]map[string]entry)
-	j.NextSeqNum = 0
 }

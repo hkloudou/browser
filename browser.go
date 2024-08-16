@@ -3,20 +3,19 @@ package browser
 import (
 	"crypto/tls"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
 )
 
-//Browser 浏览器
+// Browser 浏览器
 type Browser struct {
 	cookieJar *Jar
 	userAgent string
 	client    *http.Client
 }
 
-//GetHTTPClient 获得GetHTTPClient对象
+// GetHTTPClient 获得GetHTTPClient对象
 func (me *Browser) GetHTTPClient() *http.Client {
 	if me.client == nil {
 		me.client = &http.Client{
@@ -69,12 +68,12 @@ func (me *Browser) SetUserAgent(str string) string {
 	return me.userAgent
 }
 
-//GetRequestObject 获得请求对象
+// GetRequestObject 获得请求对象
 func (me *Browser) GetRequestObject(method string, url string, body io.Reader) (*http.Request, error) {
 	return me.GetRequestWithHeadObject(method, url, nil, body)
 }
 
-//GetRequestWithHeadObject 使用指定头去提交
+// GetRequestWithHeadObject 使用指定头去提交
 func (me *Browser) GetRequestWithHeadObject(method string, url string, headers map[string]string, body io.Reader) (*http.Request, error) {
 	httpReq, err := http.NewRequest(method, url, body)
 	if err == nil {
@@ -88,7 +87,7 @@ func (me *Browser) GetRequestWithHeadObject(method string, url string, headers m
 	return httpReq, err
 }
 
-//Do 打开网页
+// Do 打开网页
 func (me *Browser) Do(httpReq *http.Request) ([]byte, error) {
 	client := me.GetHTTPClient()
 	httpResp, err := client.Do(httpReq)
@@ -99,7 +98,7 @@ func (me *Browser) Do(httpReq *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	body, errReadAll := ioutil.ReadAll(httpResp.Body)
+	body, errReadAll := io.ReadAll(httpResp.Body)
 	if errReadAll != nil {
 		return nil, errReadAll
 	}
@@ -110,31 +109,23 @@ func (me *Browser) Do(httpReq *http.Request) ([]byte, error) {
 // 	pools.Put(me)
 // }
 
-//NewBrowser 新建一个全新的浏览器
-func NewBrowser() *Browser {
-	jar, err := NewJar(nil)
-	if err != nil {
-		panic(err)
-	}
+// NewBrowser 新建一个全新的浏览器
+func New() *Browser {
 	return &Browser{
-		cookieJar: jar,
+		cookieJar: NewJar(nil),
 		userAgent: "",
 	}
 }
 
-func NewBrowserWithoutPool() *Browser {
-	jar, err := NewJar(nil)
-	if err != nil {
-		panic(err)
-	}
-	return &Browser{
-		cookieJar: jar,
-		userAgent: "",
-	}
-}
+// func NewBrowserWithoutPool() *Browser {
+// 	return &Browser{
+// 		cookieJar: NewJar(nil),
+// 		userAgent: "",
+// 	}
+// }
 
-//NewBrowserWithJar 新建一个带Cookie的浏览器
-func NewBrowserWithJar(jar *Jar) *Browser {
+// NewBrowserWithJar 新建一个带Cookie的浏览器
+func NewWithJar(jar *Jar) *Browser {
 	// bro := NewBrowser()
 	// bro.cookieJar = jar
 	// return bro

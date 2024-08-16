@@ -18,8 +18,8 @@ import (
 // }
 
 func Test_xx(t *testing.T) {
-	y, _ := NewJar(nil)
-	x := NewBrowser()
+	y := NewJar(nil)
+	x := New()
 	x.SetJar(y)
 	t.Log(x.GetJar())
 	// x.SetJar()
